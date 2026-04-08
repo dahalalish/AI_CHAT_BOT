@@ -1,6 +1,6 @@
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OllamaEmbeddings
-from langchain.chains import RetrievalQA
+from langchain.chains.retrieval_qa.base import RetrievalQA
 from langchain_community.chat_models import ChatOllama
 
 def get_rag_chain():
