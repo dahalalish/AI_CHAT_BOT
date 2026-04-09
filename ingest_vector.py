@@ -1,7 +1,7 @@
 import pandas as pd
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.vectorstores import FAISS
+from langchain_ollama import OllamaEmbeddings
+from langchain_community.vectorstores import Chroma
 import os
 
 os.makedirs("vectorstore", exist_ok=True)
@@ -13,12 +13,19 @@ for _, row in df.iterrows():
     text = " | ".join([f"{col}: {row[col]}" for col in df.columns])
     docs.append(text)
 
-splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=50
+)
+
 chunks = splitter.create_documents(docs)
 
 embeddings = OllamaEmbeddings(model="llama3")
 
-db = FAISS.from_documents(chunks, embeddings)
-db.save_local("vectorstore")
+db = Chroma.from_documents(
+    documents=chunks,
+    embedding=embeddings,
+    persist_directory="vectorstore"
+)
 
-print("✅ Vector DB created")
+print("✅ Chroma Vector DB created")

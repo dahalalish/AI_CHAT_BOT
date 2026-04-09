@@ -18,16 +18,18 @@ def hybrid_execute(query: str):
 
     # RAG
     if route == "RAG":
-        return {"type": "RAG", "answer": rag_chain.run(query)}
+        rag_result = rag_chain.invoke({"input": query})
+        return {"type": "RAG", "answer": rag_result["answer"]}
+
 
     # HYBRID
     if route == "HYBRID":
         with concurrent.futures.ThreadPoolExecutor() as executor:
             sql_future = executor.submit(sql_chain.run, query)
-            rag_future = executor.submit(rag_chain.run, query)
+            rag_future = executor.submit(rag_chain.invoke, {"input": query})
 
             sql_result = sql_future.result()
-            rag_result = rag_future.result()
+            rag_result = rag_future.result()["answer"]
 
         final_prompt = f"""
         Combine results:

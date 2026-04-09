@@ -1,20 +1,40 @@
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain.chains.retrieval_qa.base import RetrievalQA
-from langchain_community.chat_models import ChatOllama
+from langchain_community.vectorstores import Chroma
+from langchain_ollama import OllamaEmbeddings, ChatOllama
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains.retrieval import create_retrieval_chain
+
 
 def get_rag_chain():
     embeddings = OllamaEmbeddings(model="llama3")
 
-    db = FAISS.load_local("vectorstore", embeddings, allow_dangerous_deserialization=True)
+    db = Chroma(
+        persist_directory="vectorstore",
+        embedding_function=embeddings
+    )
 
     retriever = db.as_retriever(search_kwargs={"k": 3})
 
     llm = ChatOllama(model="llama3", temperature=0)
 
-    qa = RetrievalQA.from_chain_type(
+    prompt = ChatPromptTemplate.from_template("""
+Answer the user's question using only the provided context.
+
+Context:
+{context}
+
+Question:
+{input}
+""")
+
+    combine_docs_chain = create_stuff_documents_chain(
         llm=llm,
-        retriever=retriever
+        prompt=prompt
     )
 
-    return qa
+    rag_chain = create_retrieval_chain(
+        retriever,
+        combine_docs_chain
+    )
+
+    return rag_chain
