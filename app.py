@@ -1,9 +1,9 @@
 import streamlit as st
 from hybrid import hybrid_execute
 
-st.set_page_config(page_title="Offline Payer Chatbot")
+st.set_page_config(page_title="Payer Specific Chatbot")
 
-st.title("💬 Offline US Payer Chatbot (SQL + RAG)")
+st.title("Payer Specific Chatbot!")
 
 # Initialize chat history
 if "messages" not in st.session_state:
