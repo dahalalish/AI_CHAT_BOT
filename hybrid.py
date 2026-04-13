@@ -1,6 +1,12 @@
 from sql_agent import get_sql_chain
 from rag_agent import get_rag_chain
 from router import route_query
+from intent_handler import (
+    detect_intent,
+    generate_smalltalk_response,
+    generate_toxic_response,
+    generate_out_of_scope_response
+)
 from langchain_community.chat_models import ChatOllama
 import concurrent.futures
 
@@ -11,27 +17,30 @@ llm = ChatOllama(model="llama3", temperature=0)
 
 def hybrid_execute(query: str):
 
+    # INTENT HANDLING
+    intent = detect_intent(query)
+
+    if intent == "CLEAR":
+        return {"type": "CLEAR", "answer": "Chat cleared."}
+
+    if intent == "SMALL_TALK":
+        return {"type": "SMALL_TALK", "answer": generate_smalltalk_response()}
+
+    if intent == "TOXIC":
+        return {"type": "TOXIC", "answer": generate_toxic_response()}
+
+    # ROUTING
     route = route_query(query)
 
-    # OUT OF SCOPE
     if route == "OUT_OF_SCOPE":
         return {
             "type": "OUT_OF_SCOPE",
-            "answer": """
-I can help only with payer-related questions.
-
-Examples:
-• Which payers use member_id?
-• Show mapping for Aetna
-• Explain business logic for plan_id
-"""
+            "answer": generate_out_of_scope_response()
         }
 
     # SQL
     if route == "SQL":
-
         sql_output = sql_chain.invoke({"query": query})
-
         return {
             "type": "SQL",
             "answer": sql_output["result"],
@@ -40,9 +49,7 @@ Examples:
 
     # RAG
     if route == "RAG":
-
         rag_result = rag_chain.invoke({"input": query})
-
         return {
             "type": "RAG",
             "answer": rag_result["answer"]
@@ -50,18 +57,9 @@ Examples:
 
     # HYBRID
     if route == "HYBRID":
-
         with concurrent.futures.ThreadPoolExecutor() as executor:
-
-            sql_future = executor.submit(
-                sql_chain.invoke,
-                {"query": query}
-            )
-
-            rag_future = executor.submit(
-                rag_chain.invoke,
-                {"input": query}
-            )
+            sql_future = executor.submit(sql_chain.invoke, {"query": query})
+            rag_future = executor.submit(rag_chain.invoke, {"input": query})
 
             sql_output = sql_future.result()
             rag_output = rag_future.result()
@@ -72,18 +70,13 @@ Examples:
         final_prompt = f"""
 Combine results carefully.
 
-IMPORTANT:
-- Preserve ALL SQL rows.
-- Do NOT omit records.
-- Use RAG only for explanation.
-
 SQL:
 {sql_result}
 
 RAG:
 {rag_result}
 
-Give final clear answer.
+Return complete answer without omitting records.
 """
 
         final = llm.invoke(final_prompt).content

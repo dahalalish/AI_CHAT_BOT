@@ -16,21 +16,17 @@ def get_rag_chain():
 
     retriever = db.as_retriever(
         search_type="mmr",
-        search_kwargs={
-            "k": 15,
-            "fetch_k": 30
-        }
+        search_kwargs={"k": 15, "fetch_k": 30}
     )
 
     llm = ChatOllama(model="llama3", temperature=0)
 
     prompt = ChatPromptTemplate.from_template("""
-Answer the user's question using ONLY the provided context.
+Answer using ONLY the context.
 
 IMPORTANT:
-- Return ALL matching records.
-- Do NOT omit matching payers.
-- Be exhaustive.
+- Return ALL matching payers
+- Do NOT omit records
 
 Context:
 {context}
@@ -44,9 +40,4 @@ Question:
         prompt=prompt
     )
 
-    rag_chain = create_retrieval_chain(
-        retriever,
-        combine_docs_chain
-    )
-
-    return rag_chain
+    return create_retrieval_chain(retriever, combine_docs_chain)

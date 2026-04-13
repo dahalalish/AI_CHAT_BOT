@@ -3,7 +3,7 @@ from hybrid import hybrid_execute
 
 st.set_page_config(page_title="Payer Specific Chatbot")
 
-st.title("Payer Specific Chatbot!")
+st.title("Payer Specific Chatbot")
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -16,6 +16,11 @@ for msg in st.session_state.messages:
 
 # Chat input
 if prompt := st.chat_input("Ask your question..."):
+
+    # CLEAR CHAT
+    if prompt.lower().strip() in ["clear", "reset", "start over"]:
+        st.session_state.messages = []
+        st.rerun()
 
     # Save user message
     st.session_state.messages.append({
@@ -39,10 +44,15 @@ if prompt := st.chat_input("Ask your question..."):
     with st.chat_message("assistant"):
         st.markdown(answer)
 
-    # Optional debug info
+    # Debug info
     with st.expander("Debug Info"):
         st.write("Type:", result["type"])
 
-        if result["type"] == "HYBRID":
+        if "sql" in result:
             st.write("SQL:", result["sql"])
+
+        if "rag" in result:
             st.write("RAG:", result["rag"])
+
+        if "sql_steps" in result:
+            st.write("SQL Steps:", result["sql_steps"])
