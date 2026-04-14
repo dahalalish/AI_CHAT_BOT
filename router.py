@@ -6,25 +6,31 @@ llm = ChatOllama(model="llama3", temperature=0)
 def route_query(query: str):
 
     prompt = f"""
-Classify the user query.
+You are a strict query classifier for a payer data assistant.
+
+Classification Rules:
 
 SQL:
-- filtering
-- counting
-- structured tabular lookup
-- listing payers
+- Queries asking to list, count, filter, or retrieve structured data
+- Example: "list payers using member_id"
 
 RAG:
-- explanations
-- business logic interpretation
+- Definitions of fields (VERY IMPORTANT)
+- Business logic explanation
+- Meaning of columns (e.g., memid, plan_id, subscriber_id)
+- Any domain-related explanation
 
 HYBRID:
-- needs both SQL and explanation
+- Queries needing both data + explanation
 
 OUT_OF_SCOPE:
-- unrelated/general chat
-- personal questions
-- greetings
+- Completely unrelated to payer data
+- Personal chat (e.g., "how are you", "who are you")
+
+IMPORTANT:
+- If a query asks about a FIELD NAME (like memid, member_id, plan_id),
+  ALWAYS classify as RAG
+- NEVER mark domain-related queries as OUT_OF_SCOPE
 
 Query:
 {query}
@@ -32,6 +38,7 @@ Query:
 Return ONLY:
 SQL / RAG / HYBRID / OUT_OF_SCOPE
 """
+
 
     try:
         decision = llm.invoke(prompt).content.strip().upper()

@@ -33,10 +33,19 @@ def hybrid_execute(query: str):
     route = route_query(query)
 
     if route == "OUT_OF_SCOPE":
+    # fallback to RAG for short domain-like queries
+        if len(query.split()) <= 5:
+            rag_result = rag_chain.invoke({"input": query})
+            return {
+                "type": "RAG_FALLBACK",
+                "answer": rag_result["answer"]
+            }
+
         return {
             "type": "OUT_OF_SCOPE",
             "answer": generate_out_of_scope_response()
         }
+
 
     # SQL
     if route == "SQL":
