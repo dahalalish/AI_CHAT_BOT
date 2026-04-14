@@ -1,4 +1,4 @@
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings, ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -9,9 +9,10 @@ def get_rag_chain():
 
     embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
-    db = Chroma(
-        persist_directory="vectorstore",
-        embedding_function=embeddings
+    db = FAISS.load_local(
+        folder_path="vectorstore",
+        embeddings=embeddings,
+        allow_dangerous_deserialization=True,
     )
 
     retriever = db.as_retriever(
